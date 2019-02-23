@@ -1,0 +1,106 @@
+---
+title: "DATS 6101 HW 4"
+author: "Chris Montgomery"
+date: "2/11/2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r, echo = F}
+
+getwd()
+
+df <- read.csv("LogRegAdmit.csv")
+```
+
+#Q1. 
+```{r}
+#Construct t-intervals for the gre and gpa data for all applicants at 0.80 level #and 0.99 level.
+conf.level <- c(.8, .99)
+variable <- c("gre", "gpa")
+label <- c()
+interval <- c()
+a <- 1
+for (i in variable){
+  for (j in conf.level){
+    label[a] <- paste( i, toString(j), sep = "-")
+    t.interval <- t.test(df[,i], conf.level = j)$conf.int
+    print(paste( label [a],  t.interval))
+ a <- a + 1    
+  }
+}
+```
+#Q2
+```{r}
+#Repeat the same calculation in Question 1 but for admitted (1) and rejected (0) #separately
+admit <- c("admitted", "rejected")
+conf.level <- c(.8, .99)
+variable <- c("gre", "gpa")
+label <- c()
+interval <- c()
+a <- 1
+
+for (i in variable){
+  for (j in conf.level){
+    for(k in 0:1){
+    
+    label[a] <- paste( i, toString(j),k, sep = "-")
+    t.interval <- t.test(df[df$admit ==k ,i], conf.level = j)$conf.int
+    print(paste( label [a],  t.interval))
+ a <- a + 1    
+  }
+}
+}
+```
+#Q3
+
+```{r}
+#Make (box-) plots showing the gre distribution among applicants from different #school rankings.
+
+boxplot(df$gre ~ df$rank, main = "Boxplot of GRE Scores by University Rank ", xlab = "Rank", ylab = "GRE Score")
+?boxplot
+```
+#Q4. 
+```{r}
+t.test(df[df$admit == 0, "gre"], df[df$admit == 1, "gre"])
+```
+The above two sample t-test asseses whether the average GRE scores for admitted and rejected students significantly differ. Formally, we are testing the null hypothesis $H_0$: $\mu_{rejected} = \mu_{accepted}$ with $\mu$ representing mean GRE scores for each group. As such, we determine the alternative hypothesis to be $H_1 : \mu_{accepted} \neq \mu_{rejected}$. According to the results of the above t-test, we can formally reject the null hypothesis at the > 99% confidence level. Given a t-statistic of -3.83 and p-value of .0002, we say there is a less than 1% chance the difference between sample means arose from random sampling. Given the sign of the t-stat and confidence interval, we can say that the average score for accepted students is between 22 and 69 points higher than the rejected average. 
+
+
+
+#Q5
+
+```{r}
+#Repeat questions 3 and 4 for the gpa data. Explain whether the result is #reasonable to you or not.
+
+boxplot(df$gpa~df$rank)
+
+# Compute the analysis of variance
+anova <- aov(gpa ~ rank, data = df)
+# Summary of the analysis
+summary(anova)
+```
+The above boxplot appears to show limited variation within the GPA distributions for students grouped by undergraduate intsitutional ranking. This seems fairly intuitive, as GPA, unlike GRE scores, tend to be determined by within university characteristics. Put simply, the low variation in GPA between groups can be explained by the fact taht low ranking institutions can give students 4.0s just as top tier institutions can fail their students. Likewise, the above finding may show that students of varying GPAs apply to grad school at roughly the same proportions, regardless of undergraduate institution ranking. The above anova test confirms that variation in GPA scores between groups is not statistically significant.     
+
+```{r}
+t.test(df[df$admit == 0, "gpa"], df[df$admit == 1, "gpa"])
+
+```
+The above t-test demonstrates that the average gpa of admitted students significantly differs from rejected students. Based on the direction of the t-statistics and reported 95% confidence interval, we can say that we are 95% confident the mean gpd for admitted students was $[.067,.22]$ points higher than the rejected student mean. This finding should be fairly intuitive, if we believe that gpa is a considering factor in the college admission process. 
+
+#Q6
+```{r}
+#Construct a contingency table between admit and rank.
+table1 <- table(df$admit,df$rank, dnn = c("Rejected/Admitted", "Rank")); table1
+
+```
+#Q7
+```{r}
+chi.test <- chisq.test(table1)
+chi.test$residuals
+chi.test
+```
+To determine whether applicant undergraduate institution rank and rejection status are distributed independently, we can employ a chi-square test. With a chi-square test, we test the null hypotheses $H_0: P(Rejection|Rank) = P(Rejection)$. Put simply, we are testing whether there is any statistically significant relationship between school rank and admission status. The results of the above test demonstrate that we reject the null hypothesis (at a confidence level > 99%). As such, we accept the alternative hypothesis that admission status is dependent upon undergraduate institution rank. Visual inspection of the residuals suggests that lowest ranked universities are underrepresented (overrepresented) in the admitted category, while top tier universities are underrepresented (overrepresented) in the rejected (accepted) category. This should be fairly intuitive, as we assume that the quality of an undergraduate institution has some effect on the likelihood of admittance to a graduate institution. 
+
+

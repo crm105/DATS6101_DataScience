@@ -1,0 +1,146 @@
+---
+title: "DATS 6101 Homework 5"
+author: "Chris Montgomery"
+date: "2/18/2019"
+output: html_document
+---
+
+```{r, echo = F}
+library(dplyr); library("faraway")
+
+```
+
+```{r}
+bikeorig <- read.csv("bikedata.csv")
+bikeorig$Date <- as.Date(bikeorig$Date, format = "%m/%d/%Y")
+
+bike <- bikeorig %>% select (everything(), -c(Casual.Users, Registered.Users, Date )) %>% rename(Weekday = Day.of.the.Week, Temp.Feel = Temperature.Feels.F, Temp.F = Temperature.F )
+str(bike)
+
+colnames(bike)
+
+summary(bikeorig$Date)
+```
+
+Bike has a total of 11 variables. 9 are registered as integers, while 2 are numeric. 
+
+```{r}
+bike %>% filter (Hour > 13, Hour < 19)
+```
+There are 3,646 observations during the afternoon rush hour. 
+
+```{r}
+correlation.matrix <- cor(bike); round(correlation.matrix, 2)
+
+library(corrplot)
+corrplot(correlation.matrix, type = "upper", order = "hclust", 
+         tl.col = "black", tl.srt = 45)
+```
+```{R}
+factor.variables <- c("Season", "Holiday", "Weekday", "Working.Day", "Weather.Type")
+
+df[,factor.variables] <- as.factor(df[,factor.variables])
+summary(bike$Working.Day)
+
+bike[factor.variables] <- lapply(bike[factor.variables], factor)
+```
+
+
+```{r}
+
+ggplot(bike, aes(x = (Hour), y = Total.Users)) + geom_point() + 
+  geom_smooth(se = FALSE, method = "gam", formula = y ~ (x + x^2))
+
+```
+
+Based on the above plot, we need to rethink how the "Hour" variable is treated. I think there are two potentially appropriate measures we can take. First, we can keep it ordinal, but change the start and end points (I.E. Hour begins with 0 at 5 AM). Otherwise, we can convert the hour variable to categorical. In this case, we are saying we don't want to deal with the ordinal relationship of time of day. Personally, I think if we assign a starting point of 5 AM and treat the hour variable as ordinal, we can capture a quadratic relationship with time of day. 
+
+```{r}
+bike$hour.ordinal <- bike$Hour - 5 
+bike[bike$hour.ordinal < 0, ]$hour.ordinal <-24  + bike[bike$hour.ordinal < 0, ]$hour.ordinal
+
+ggplot(bike, aes(x = (hour.ordinal), y = Total.Users)) + geom_point() + 
+  stat_smooth(method = "lm", formula = y ~ x + I(x^2), size = 1)
+
+
+bike$hour.categorical <- as.factor(bike$Hour)
+
+```
+
+
+```{R}
+lm1 <- lm(Total.Users ~ Weekday  + Temp.Feel + Hour + Humidity + Weather.Type, data = bike); summary(lm1)
+vif (lm1)
+```
+```{r}
+#Lets create a variable that captures holidays and weekends together. Could give us a few more 
+#degrees of freedom lost with using hour * Holiday and hour * working.day interactions
+
+bike$day.off <- ifelse(bike$Working.Day == 0 | bike$Holiday == 1,1,0)
+
+```
+
+```{r}
+
+lm2 <- lm(Total.Users~ Weekday  + Temp.Feel + I(Temp.Feel^2) + Hour+ I(Hour^2) + Humidity + I(Humidity^2)+ Wind.Speed + Season + Weather.Type + Temp.Feel * Season, data = bike)
+
+  
+lm3 <- lm(Total.Users~ Weekday  + Holiday+ Temp.Feel + I(Temp.Feel^2) + Hour+ I(Hour^2) + Humidity + I(Humidity^2)+ Wind.Speed + Season + Weather.Type + Temp.Feel * Season, data = bike)
+
+lm4 <- lm(Total.Users~ Weekday  + Holiday+ Temp.Feel + Hour+ I(Hour^2)  + I(Humidity^2)+ Wind.Speed + Season + Weather.Type + Temp.Feel * Season, data = bike)  
+
+lm5 <- lm(Total.Users~ Weekday  + Holiday+ Temp.Feel + hour.ordinal+ I(hour.ordinal^2)  + I(Humidity^2)+ Wind.Speed + Season + Weather.Type + Temp.Feel * Season, data = bike) 
+
+lm6 <- lm(Total.Users~ Weekday  + Holiday+ Temp.Feel + hour.categorical  + I(Humidity^2)+ Wind.Speed + Season + Weather.Type + Temp.Feel * Season, data = bike) 
+
+
+lm7 <- lm(Total.Users~ Weekday  + Holiday+ Temp.Feel + hour.categorical + hour.categorical * Holiday  + I(Humidity^2)+ Wind.Speed + Season + Weather.Type + Temp.Feel * Season, data = bike) 
+
+lm8 <- lm(Total.Users~ Weekday  + Holiday+ Temp.Feel + hour.categorical + hour.categorical * Holiday  + I(Humidity^2)+ Wind.Speed + Season + Weather.Type + Temp.Feel * Season + hour.categorical * Working.Day, data = bike) 
+
+lm9 <- lm(Total.Users~  Temp.Feel + hour.categorical + Wind.Speed + Humidity + Season + Weather.Type + Temp.Feel * Season + day.off + (day.off * hour.categorical), data = bike) 
+
+
+  
+summary(lm2) 
+summary(lm3)
+summary(lm4)
+summary(lm5)
+summary(lm6)
+summary(lm7)
+summary(lm8)
+summary(lm9)
+
+
+
+
+
+
+vif(lm8)
+
+plot(lm9$residuals)
+
+
+
+ qqnorm(lm9$residuals, 
+     ylab="Standardized Residuals", 
+     xlab="Normal Scores", 
+    main="Old Faithful Eruptions") 
+qqline(lm9$residuals)
+```
+
+```{r}
+ggplot(bike, aes(x = Temp.Feel, y = Total.Users, color = Season)) + theme_bw() + geom_point()
+
+ggplot(bike, aes(x = (Humidity * Temp.F), y = Temp.Feel)) + geom_point()
+
+ggplot(bike, aes(x = (Hour), y = Total.Users)) + geom_point() + 
+  geom_smooth(se = FALSE, method = "gam", formula = y ~ (x + x^2))
+
+ggplot(bike, aes(x = (Humidity), y = Total.Users)) + geom_point() + 
+ stat_smooth(method = "lm", formula = y ~ x + I(x^2), size = 1)
+
+```
+
+
+

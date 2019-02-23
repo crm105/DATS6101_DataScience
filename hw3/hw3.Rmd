@@ -1,0 +1,135 @@
+---
+title: "DATS6101 HW 3"
+author: "Chris Montgomery"
+date: "2/1/2019"
+output: html_document
+---
+
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## DATS 6101 Homework III
+
+```{r include = F}
+library(dplyr); library(MASS)
+
+df <- Pima.te
+
+```
+
+#Q1.
+
+```{r}
+summary(df)
+
+```
+
+#Q2.
+
+```{r}
+str(df)
+```
+
+#Q3.
+
+```{r}
+colnames(df)
+```
+
+#Q4 and Q5.
+
+```{r}
+df[,"age"] <- as.numeric(df[,"age"])
+summary(df[c("bmi", "age")])
+length(na.omit(df$age)); length(na.omit(df$bmi))
+
+range(df$bmi); range(df$age)
+
+nrow(df)
+
+```
+There are a total of 332 observations (women) in the dataset. 
+
+#Q6.
+
+```{r}
+df[1:5,1:4]
+
+
+```
+
+#Q7.
+
+```{r}
+df[df$bmi >= 50,]
+df %>% filter(bmi >= 50)
+```
+
+#Q8.
+
+```{r}
+nrow(df[df$type == "Yes",]) / nrow(df)
+```
+
+The 32.8% of individuals within the sample data have diabetes as defined by WHO criteria. 
+#Q9.
+
+```{r}
+hist(df$bmi)
+```
+
+#Q10. 
+```{r}
+t.test (df$bmi, conf.level = .8) ; t.test(df$bmi, conf.level = .99) 
+```
+
+Assuming valid T-distribution assumptions, we are 80% confident that the mean BMI for our population is between 32.7 and 33.8. Likewise, we are 99% confident the population mean falls between 32.2 and 34.3. 
+
+ 
+#Part II
+
+#Q11.
+```{r}
+df <- read.csv("hw3/vlbw.csv")
+
+```
+
+#Q12
+```{r}
+hist(df$hospstay)
+
+
+#Let's remove observations using Tukey's 1.5 IQR method. 
+outliers <- function(data.variable){
+
+data.correct <- na.omit(data.variable[data.variable > -1])
+
+iqr <- quantile(data.correct, 0.75, na.rm = TRUE) - quantile(data.correct, 0.25, na.rm = TRUE) 
+
+lower.bound <- quantile(data.correct, .25, na.rm = TRUE) - (1.5 * iqr); lower.bound
+upper.bound <- quantile(data.correct, .75, na.rm = TRUE) + (1.5 * iqr); upper.bound 
+
+data.correct <- data.correct[!data.correct > upper.bound & !data.correct < lower.bound]
+
+
+return(hist(data.correct, main = "Histogram of Outlier Corrected Data"))
+return(data.correct)}; outliers(df$hospstay) 
+```
+
+#Q13 and #Q14
+
+```{r}
+boxplot(df$lowph); hist(df$lowph)
+```
+
+#Q15.
+
+```{r}
+ t.test(df$lowph, conf.level = .99)
+```
+
+
