@@ -1,0 +1,171 @@
+---
+title: 'R - In class assignment #2'
+author: 'Chris Montgomery'
+date: "Jan 23, 2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+Complete these tasks:
+1. Read in the file with all the baseball players height, weight and age info (BaseballHeightWeight.csv) as a dataframe.
+2. View the data
+3. Change the headers/column names appropriately.
+4. Print the "head" of the data set.
+5. Print the "tail" of the data set.
+6. Find the statistics (summary) of the heights, weights, and ages of the players. Using complete sentences, give the reader these summary.
+
+Make Charts:
+7. make a boxplot of the weight of the players. Does it look normal? 
+8. make a histogram of the height of the players. Does the distribution looks normal?
+9. Make a plot with weights vs heights of the players, color by Teams 
+10. Make a plot with weights vs heights of the players, color by age
+
+Subsetting:
+11. Obtain a subset of the data with only Team Washington. Using complete sentences, give the summary statistics on height of Team Washington.
+12. Obtain another subset with Team Washington and only players older than 25. Again, give the summary of the statistics on height.
+
+## 1. Read in the file with all the baseball players height, weight and age info 
+```{r Q1, include=T}
+# This is coder's comments
+df <- read.csv("BaseballHeightWeight.csv")
+# baseballdf <- data.frame(read.csv("BaseballHeightWeight.csv"))
+```
+
+## 2. View the data
+```{r Q2, include = T}
+#View the dataframe. the command df prints the entire dataframe. 
+head(df)
+```
+##3. Change the headers/column names appropriately.
+```{r Q3, include = T}
+#View column names of DF
+colnames(df)
+
+#Create a vector of new, more appropriate column names 
+new.cols <- c("name", "team", "position", "height", "weight", "age")
+
+#Replace old column names with vector of new column names, print to confirm
+colnames(df) <- new.cols
+head(df, n = 2)
+```
+
+## 4. Print the "head" of the data set.
+```{r Q4, inclue = T}
+#Print the first 10 observations of the dataset
+head(df, n = 10)
+
+```
+##5. Print the "tail" of the data set.
+```{r Q5, include = T}
+#Print last 6 observations of the dataframe
+
+tail(df)
+```
+## 6. Find the statistics (summary) of the heights, weights, and ages of the players. Using complete sentences, give the reader these summary. ## 
+ 
+```{r Q6, include=TRUE}
+
+
+#summary stats of the dataframe columns
+summary(df[c("height", "weight", "age")])
+
+#find who's weight is not featured in the dataset. 
+df[is.na(df$weight),]
+```
+
+The heights of players in the data frame ranged from a minimum of 67" (5' 7") to a max of 83" (6' 11"). The average (mean) height was nearly 6 feet 7 inches, with a median of 6 feet 7 inches. The interquartile range for height is seemingly small, with only 3 inches separating the first and third quartiles. In terms of weight, players in the dataframe ranged between 150 and 290 pounds. The mean and median weight were similar, both at approximately 200 pounds. The weight of one player, Kirk Saarloos, was not featured in the dataframe. Finally, players in the dataframe spanned ages 20.9 to 48.5, with an average age of 28.74. Like height and weight, age the spread between the median and mean age in the dataframe was relatively small. This could suggest the above variables are normally distributed, or at least not skewed. 
+
+##7. make a boxplot of the weight of the players. Does it look normal? 
+
+
+```{r Q7, include = T}
+
+#make a boxplot of the weight of the players. Does it look normal? 
+boxplot(df$weight, main = "Boxplot of Player Weight", ylab = "PLayer Weight (LBS)")
+
+
+```
+A simple boxplot of player weights suggest that several upper bound outliers exist in the data. Visual inspection show that at least 5 players have weights above the third quartile +  1.5 * IQR. Further inspection shows which players represent the outliers. 
+
+```{r Q7_continued, include=T}
+
+#Let's identify which players are upper bound outliers in weight
+outlier <- 1.5 * (quantile(df$weight, .75, na.rm = TRUE) - quantile(df$weight, .25, na.rm = TRUE)) +  quantile(df$weight, .75, na.rm = TRUE)
+
+outlier
+
+df[df$weight > outlier,]
+
+```
+
+
+##8. make a histogram of the height of the players. Does the distribution looks normal?
+
+```{r Q8, include = TRUE}
+
+#make a histogram of the height of the players. Does the distribution looks normal?
+hist(df$height, main = "Histogram of Player Heights")
+```
+The above histogram of the player heights at first glance appears to be well approximated by a normal distribution. However, there does appear to be a few high values which could indicate rightward skew. 
+
+##9. Make a plot with weights vs heights of the players, color by Teams
+
+```{r Q9, include = TRUE}
+
+#Make a plot with weights vs heights of the players, color by Teams 
+
+library(ggplot2)
+ggplot(df, aes(x = weight, y = height, color = team))+ theme_bw()+
+  geom_point() + labs(title = "Scatter Plot of Height and Weight by Team")+
+                      xlab ("Weight (pounds)") + ylab ("Height (inches)")
+
+```
+
+Unfortunately, I think segmenting the data by team introduces too much noise in the above plot. Further analysis could attempt to aggregate up to American vs. National league to determine whether different trends exist between the two leagues. Regardless, there appears to be a clear positive linear relationship between height and weight. 
+
+## 10. Make a plot with weights vs heights of the players, color by age
+
+```{r Q10, include = T}
+#10. Make a plot with weights vs heights of the players, color by age
+
+ggplot(df, aes(x = weight, y = height, color = age)) + theme_bw()+
+  geom_point()+ scale_colour_gradient2(midpoint=30, low="blue",
+                     high="red" )
+
+```
+
+At first glance, it may seam that older players could have a lower intercept in the above plot compared to younger players. Further analysis could include age interaction terms in any sort of modeling betweein height and weight. 
+
+##11. Obtain a subset of the data with only Team Washington. Using complete sentences, give the summary statistics on height of Team Washington.
+
+```{r Q11, include = TRUE}
+
+#Obtain a subset of the data with only Team Washington. Using complete sentences, give the summary statistics on height of Team Washington.
+
+was <- subset(df, team == "WAS")
+summary(was)
+```
+
+The above summary describes information related to all of the Washington Nationals players contained in the dataset. In total, there are 20 pitchers, 7 outfielders, and 9 position players, totaling 36 players. The team appears young by MLB standards, with a mean age of approximately 27 and a max age of 32.3. Compared to the MLB summary table, the nationals appear to be quite average in terms of height and weight, with averages of 74.14 inches and 199.8 pounds respectively. The height range of Nationals players appears to be pretty small, with a minimum height of 70 inches and maximum of 83. The interquartile range was quite compact, with only 2 inches separating the first and third quartiles. 
+
+
+##12. Obtain another subset with Team Washington and only players older than 25. Again, give the summary of the statistics on height.
+
+```{r Q12, include =TRUE}
+
+# Obtain another subset with Team Washington and only players older than 25. Again, give the summary of the statistics on height.
+
+was.older <- was[was$age > 25,]
+
+summary(was.older[,c("height")])
+```
+
+The older players on the Nationals have a wide range of heights, ranging from 67 inchess to 83 inches. The median and mean height for Washington players over 25 were similar, at approximately 74 inches. The interquartile range was likewise compact, with only three inches separating the 1st and 3rd quartiles. 
+
