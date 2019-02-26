@@ -35,7 +35,7 @@ cont.variables <- c("BATHRM", "HF_BATHRM", "ROOMS", "BEDRM", "AYB", "YR_RMDL", "
 
 #Identify categorical variables of interest for chi-square tests 
 
-cat.variables <- c("HEAT","AC", "GRADE", "EXTWALL", "ROOF", "INTWALL", "QUADRANT")
+cat.variables <- c("HEAT","AC", "CNDTN", "EXTWALL", "ROOF", "INTWALL", "QUADRANT")
 
 
 #Create a loop that conducts a t-test for each of the above variables
@@ -62,14 +62,17 @@ for (i in 1:length(cont.variables)){
  df.cat$missing <- 0; df.cat[is.na(df.cat$PRICE),"missing"] = 1; df.cat$missing <- as.factor(df.cat$missing)
  df.cat <- df.cat %>%  select(cat.variables, missing)
  
+
+ chi.test.results <-  lapply(seq(1:length(cat.variables)),function(i){
+   x <- df.cat[,cat.variables[i]]
+   y <- df.cat[,"missing"]
+   chisq.test(x,y)
+   
+ })
  
-df.cat <-  gather(df.cat, variable, id, 1:7)
-df.cat <- df.cat %>% group_by(missing, id) %>% summarize(value = n())
 
-df.cat <-  spread(df.cat, missing, value); colnames(df.cat) <- c( "feature","non-missing", "missing");
-df.cat <- df.cat[-(1:2),]
-
-
-
-
+for (i in chi.test.results){
+  print(i$residuals)
+}
  
+ chi.test.results[1]
