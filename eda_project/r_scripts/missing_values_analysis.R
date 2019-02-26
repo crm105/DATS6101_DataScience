@@ -11,7 +11,7 @@
 
 
 #Import necessary libraries
-library(dplyr); library(ggplot2), library(gplots), library(tidyvers)
+library(dplyr); library(ggplot2); library(gplots); library(tidyverse)
    
 
 #Read in the original source data
@@ -44,7 +44,7 @@ cat.variables <- c("HEAT","AC", "GRADE", "EXTWALL", "ROOF", "INTWALL", "QUADRANT
  t.test.results <-  lapply(seq(1:length(cont.variables)),function(i){
   x <- df.clean[,cont.variables[i]]
   y <- df.dropped[,cont.variables[i]]
- hope[[i]] <-  t.test(x,y, alternative = "two.sided", na.action = na.omit)
+ t.test(x,y, alternative = "two.sided", na.action = na.omit)
   
 })
 
@@ -57,7 +57,6 @@ for (i in 1:length(cont.variables)){
   ))
 }
  
-
 #Create a loop that conducts chi-square for each of the categorical variables
  df.cat <- df %>% filter( sale.year > 2015)
  df.cat$missing <- 0; df.cat[is.na(df.cat$PRICE),"missing"] = 1; df.cat$missing <- as.factor(df.cat$missing)
@@ -70,10 +69,7 @@ df.cat <- df.cat %>% group_by(missing, id) %>% summarize(value = n())
 df.cat <-  spread(df.cat, missing, value); colnames(df.cat) <- c( "feature","non-missing", "missing");
 df.cat <- df.cat[-(1:2),]
 
- anova.results <-  lapply(seq(1:length(cont.variables)),function(i){
-   x <- df.clean[,cat.variables[i]]
-   y <- df.dropped[,cat.variables[i]]
-   hope[[i]] <-  t.test(x,y, alternative = "two.sided", na.action = na.omit)
-   
- })
+
+
+
  
