@@ -6,81 +6,100 @@ output: html_document
 ---
 
 ```{r, echo = F}
-library(dplyr); library("faraway")
+library(dplyr); library("faraway"); library(ggplot2)
 
 ```
 
+
+#Question 2 
 ```{r}
+
+#Read in our data 
 bikeorig <- read.csv("bikedata.csv")
 bikeorig$Date <- as.Date(bikeorig$Date, format = "%m/%d/%Y")
 
+#Remove variables we are not interested in
 bike <- bikeorig %>% select (everything(), -c(Casual.Users, Registered.Users, Date )) %>% rename(Weekday = Day.of.the.Week, Temp.Feel = Temperature.Feels.F, Temp.F = Temperature.F )
 str(bike)
-
-colnames(bike)
-
-summary(bikeorig$Date)
 ```
 
 Bike has a total of 11 variables. 9 are registered as integers, while 2 are numeric. 
 
+#Question 3
 ```{r}
-bike %>% filter (Hour > 13, Hour < 19)
+#Filter observations by hour range
+nrow (bike %>% filter (Hour > 13, Hour < 19))
 ```
 There are 3,646 observations during the afternoon rush hour. 
 
+
+#Question 4
 ```{r}
+#Craate a correlation matrix for our variables of interest. Plot matrix
+
 correlation.matrix <- cor(bike); round(correlation.matrix, 2)
 
 library(corrplot)
 corrplot(correlation.matrix, type = "upper", order = "hclust", 
          tl.col = "black", tl.srt = 45)
 ```
+
+#Question 5
 ```{R}
+#Convert categorical variables to factor
 factor.variables <- c("Season", "Holiday", "Weekday", "Working.Day", "Weather.Type")
-
-df[,factor.variables] <- as.factor(df[,factor.variables])
-summary(bike$Working.Day)
-
 bike[factor.variables] <- lapply(bike[factor.variables], factor)
 ```
 
 
 ```{r}
-
+#Create a plot to visualize relationship between users and hour of day
 ggplot(bike, aes(x = (Hour), y = Total.Users)) + geom_point() + 
-  geom_smooth(se = FALSE, method = "gam", formula = y ~ (x + x^2))
+  geom_smooth(se = FALSE, method = "gam", formula = y ~ (x + I(x^2)))
 
 ```
 
-Based on the above plot, we need to rethink how the "Hour" variable is treated. I think there are two potentially appropriate measures we can take. First, we can keep it ordinal, but change the start and end points (I.E. Hour begins with 0 at 5 AM). Otherwise, we can convert the hour variable to categorical. In this case, we are saying we don't want to deal with the ordinal relationship of time of day. Personally, I think if we assign a starting point of 5 AM and treat the hour variable as ordinal, we can capture a quadratic relationship with time of day. 
+Based on the above plot, we need to rethink how the "Hour" variable is treated. I think there are two potentially appropriate measures we can take. First, we can keep it ordinal, but change the start and end points (I.E. Hour begins with 0 at 5 AM). Otherwise, we can convert the hour variable to categorical. For now we can try both and see which improves the model fit the most. However, it's likely that treating the variable as categorical will result in a better fit simply by add 24 new dummy variables in the regression. This could raise concerns about overfitting. However, our sample size is pretty large.   
 
 ```{r}
+#Create a new variable that represents hour of day treated as a continuous variable 
 bike$hour.ordinal <- bike$Hour - 5 
 bike[bike$hour.ordinal < 0, ]$hour.ordinal <-24  + bike[bike$hour.ordinal < 0, ]$hour.ordinal
 
 ggplot(bike, aes(x = (hour.ordinal), y = Total.Users)) + geom_point() + 
   stat_smooth(method = "lm", formula = y ~ x + I(x^2), size = 1)
 
-
+#Create an hour variable that is categorical
 bike$hour.categorical <- as.factor(bike$Hour)
 
 ```
 
-
+#Question 6
 ```{R}
+
+#Fit a linear model, check VIF 
 lm1 <- lm(Total.Users ~ Weekday  + Temp.Feel + Hour + Humidity + Weather.Type, data = bike); summary(lm1)
 vif (lm1)
 ```
+Above shows the summary results for a linear model. It includes categorical variables for day of the week, and weather type as well as continuous regressors of temperature feel, humidity, and hour of day. The adjusted R-square is .33 and the VIF values for included regressors do not appear to be out of the ordinary. For this regression model, I elected to not included true temperature due to multicollinearity concerns. Likewise, factor variables such as holiday dummies, in order to reduce the complexity of model output. All variables included appear to be significant at the 95% confidence level, with the exception of some values of the categorical variables weather.type and weekday. This suggests that the relationship between some weekdays and weather.types are not significantly different from their baseline values (Weekday 7 and Weather.Type 1). 
+
 ```{r}
-#Lets create a variable that captures holidays and weekends together. Could give us a few more 
-#degrees of freedom lost with using hour * Holiday and hour * working.day interactions
+#Lets create a variable that captures holidays and weekends together. Could give us a few more degrees of freedom lost with using hour * Holiday and hour * working.day interactions
 
 bike$day.off <- ifelse(bike$Working.Day == 0 | bike$Holiday == 1,1,0)
 
 ```
+#Q7-9
+
+The below code produces 8 different linear model specifications. For brevity, I will discuss the modeling decisions and findings regarding my preferred specification lm9. In this model, I included continuous variables capturing the termperature feel, windspeed, and humidity. Each value was statistically significant at above the 95% confidence level. I intentionally chose not to included a real temperature variable due to concerns over multicollinearity with the perceived temperature variable. In addition to the continuous variables, I included categorical variables representing the hour of day, season, weather type, and a dummy capturing whether a non-working day (holiday + weekend). Finally, I included an interaction terms between the day off dummy and hour of day variable as well as temperature feel and season. In creating the first interaction, I attempted to capture the different motivations for biking during certain times of the day, namely the different affects of the daily commute vs. leasure riding. The second interaction term attempts to capture an assumed positive correlation between temperature and total users during cold months, and a negative correlation during hot months. Point estimates for each variable can be viewed in the summary table below.   
+
+Model 9, the preferred regression specification yielded an adjusted R^2 value of .76. VIF values looking generally appropriate, with the exception of variables featured in the interaction terms. This is to be expected, and should not be a cause for concern. However, some concerns do remain. First, the inclusion of hour of day categorical variables increases concerns over model overfitting. Each use of the categorical variable creates 24 separate dummy variables. In so doing, it's possible the R^2 of the model is being artificially increased. However, I argue that I have a sound theoretical justification for its inclusion. 
+
+In addition, an ACF plot of the residuals show significant levels of autocorrelation within the residuals. This suggests the model could be misspecified with innacurate standard errors. Introducing some mechanism to account for time could help deal with the autocorrelation issues. 
 
 ```{r}
+
+lm9 <- lm(Total.Users~  Temp.Feel + hour.categorical + Wind.Speed + Humidity + Season + Weather.Type + Temp.Feel * Season + day.off +  (day.off * hour.categorical), data = bike) 
 
 lm2 <- lm(Total.Users~ Weekday  + Temp.Feel + I(Temp.Feel^2) + Hour+ I(Hour^2) + Humidity + I(Humidity^2)+ Wind.Speed + Season + Weather.Type + Temp.Feel * Season, data = bike)
 
@@ -98,49 +117,19 @@ lm7 <- lm(Total.Users~ Weekday  + Holiday+ Temp.Feel + hour.categorical + hour.c
 
 lm8 <- lm(Total.Users~ Weekday  + Holiday+ Temp.Feel + hour.categorical + hour.categorical * Holiday  + I(Humidity^2)+ Wind.Speed + Season + Weather.Type + Temp.Feel * Season + hour.categorical * Working.Day, data = bike) 
 
-lm9 <- lm(Total.Users~  Temp.Feel + hour.categorical + Wind.Speed + Humidity + Season + Weather.Type + Temp.Feel * Season + day.off + (day.off * hour.categorical), data = bike) 
 
-
-  
-summary(lm2) 
-summary(lm3)
-summary(lm4)
-summary(lm5)
-summary(lm6)
-summary(lm7)
-summary(lm8)
 summary(lm9)
-
-
-
-
-
-
-vif(lm8)
-
-plot(lm9$residuals)
-
-
+vif(lm9)
 
  qqnorm(lm9$residuals, 
      ylab="Standardized Residuals", 
      xlab="Normal Scores", 
-    main="Old Faithful Eruptions") 
-qqline(lm9$residuals)
+    main="Residual plot of Model 9") 
+
+acf(lm9$residuals)
 ```
 
-```{r}
-ggplot(bike, aes(x = Temp.Feel, y = Total.Users, color = Season)) + theme_bw() + geom_point()
 
-ggplot(bike, aes(x = (Humidity * Temp.F), y = Temp.Feel)) + geom_point()
-
-ggplot(bike, aes(x = (Hour), y = Total.Users)) + geom_point() + 
-  geom_smooth(se = FALSE, method = "gam", formula = y ~ (x + x^2))
-
-ggplot(bike, aes(x = (Humidity), y = Total.Users)) + geom_point() + 
- stat_smooth(method = "lm", formula = y ~ x + I(x^2), size = 1)
-
-```
 
 
 

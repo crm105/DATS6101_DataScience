@@ -86,15 +86,23 @@ df$content <- paste(df$FULLADDRESS, sep = "<br/>", df$PRICE)
 
 
   
-  m <- leaflet() %>%
-    addProviderTiles(providers$Esri.NatGeoWorldMap) %>%  # Add default OpenStreetMap map tiles
-    addMarkers(lng=df$LONGITUDE[1:1000], lat=df$LATITUDE[1:1000], popup=df$content[1:1000],
-               options = popupOptions(closeButton = FALSE))
+  # m <- leaflet() %>%
+  #   addProviderTiles(providers$Esri.NatGeoWorldMap) %>%  # Add default OpenStreetMap map tiles
+  #   addMarkers(lng=df$LONGITUDE[1:1000], lat=df$LATITUDE[1:1000], popup=df$content[1:1000],
+  #              options = popupOptions(closeButton = FALSE))
+  # 
+  # m
+  # 
+  # 
   
-  m
+#Include a variable that measures distance from city center
+  cap.coordinates <- c(38.8899, -77.0091)
   
+  df$dist <-( (df$LONGITUDE + cap.coordinates[2])^2 + (df$LATITUDE - cap.coordinates[1]))^.5
+  
+
 write.csv(df, "data/dc_residential_data_clean.csv")
 
-boxplot(df$PRICE~df$QUADRANT)
+
 
 
