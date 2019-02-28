@@ -33,13 +33,12 @@ drop.list <- c("BLDG_NUM", "SALE_NUM", "USECODE", "GIS_LAST_MOD_DTTM", "CMPLX_NU
 df <- df[,!colnames(df) %in% drop.list]
 
 #Convert to factor : 
-convert.factor <- c("ZIPCODE", "QUALIFIED", "STYLE", "STRUCTURE")
+convert.factor <- c("ZIPCODE", "QUALIFIED", "STYLE", "STRUCTURE", "ZIPCODE")
 
-
-df[,colnames(df) %in% convert.factor] <- as.factor(df[,colnames(df) %in% convert.factor])
-
-
-
+for (i in convert.factor){
+  df[,i] <- as.factor(df[,i])
+  print(df[,i])
+}
 
 #code to remove outliers
 # df$PRICE <- log(df$PRICE)
@@ -98,11 +97,23 @@ df$content <- paste(df$FULLADDRESS, sep = "<br/>", df$PRICE)
 #Include a variable that measures distance from city center
   cap.coordinates <- c(38.8899, -77.0091)
   
-  df$dist <-( (df$LONGITUDE + cap.coordinates[2])^2 + (df$LATITUDE - cap.coordinates[1]))^.5
-  
+df$dist <-( (df$LONGITUDE - cap.coordinates[2])^2 + (df$LATITUDE - cap.coordinates[1])^2)^.5;
+df$PRICE <- log(df$PRICE)
+df$sale.year <- as.factor(df$sale.year)
+
+#Let's Remove the top and bottom 100 price observations
+df <- unique(df)
+
+
+df <-  df[!df$PRICE %in% tail(sort(df$PRICE),50),]
+df <-  df[!df$PRICE %in% head(sort(df$PRICE),50),]
+
 
 write.csv(df, "data/dc_residential_data_clean.csv")
 
+boxplot(df$PRICE)
+hist(df$PRICE)
 
 
-
+summary(df$PRICE)
+2.81^(max(df$PRICE))

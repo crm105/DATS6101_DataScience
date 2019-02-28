@@ -47,6 +47,8 @@ cat.variables <- c("HEAT","AC", "CNDTN", "EXTWALL", "ROOF", "INTWALL", "QUADRANT
  t.test(x,y, alternative = "two.sided", na.action = na.omit)
   
 })
+ 
+ t.test.results[[1]]$p.value
 
  #Create a loop that reports the significance of each pairwise t-test 
 for (i in 1:length(cont.variables)){
@@ -72,7 +74,11 @@ for (i in 1:length(cont.variables)){
  
 
 for (i in chi.test.results){
-  print(i$residuals)
+  print(i$p.value)
 }
  
  chi.test.results[1]
+ 
+ #Tukey's HSD???
+ 
+
