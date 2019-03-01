@@ -15,7 +15,7 @@ df$sale.year <- as.factor(df$sale.year)
 #Identify continuous variables of interest for anova tests 
 
 cont.variables <- c('BATHRM', 'HF_BATHRM', 'ROOMS', 'BEDRM', 'AYB',
-                     'STORIES', 'PRICE', 'KITCHENS', 'FIREPLACES', 'LANDAREA', 'log.PRICE')
+                     'STORIES', 'PRICE', 'KITCHENS', 'FIREPLACES', 'LIVING_GBA', 'log.PRICE')
 
 #Identify categorical variables of interest for chi-square tests
 
@@ -48,7 +48,6 @@ for (i in 1:length(anova.test.results)){
 }
 
 anova.results <- as.data.frame (cbind(variable,p.value))
-anova.results$null <- ifelse (anova.results$variable == 'FIREPLACES', "Fail to Reject", "Reject")
 
 #This loop produces box plots for each continuous variable in question 
 p<- c()
@@ -58,4 +57,12 @@ for(i in cont.variables){
   
 }
 
-unique(df$STORIES)
+df$ZIPCODE <- as.factor(df$ZIPCODE)
+
+lm1 <- lm(log.PRICE ~ BATHRM + BEDRM + ROOMS + HF_BATHRM + LIVING_GBA + ZIPCODE + dist  , data = df ); summary(lm1)
+
+
+cor(df$BATHRM, df$HF_BATHRM)
+
+
+

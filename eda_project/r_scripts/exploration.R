@@ -20,6 +20,12 @@ df.orig <- df <- read.csv("data/dc_residential_data/DC_properties.csv")
 df$SALEDATE <- as.Date(df$SALEDATE) 
 df$sale.year <-  (lubridate::year(df$SALEDATE))
 df$log.PRICE <- log(df$PRICE)
+df$LANDAREA <- log(df$LANDAREA)
+df$LIVING_GBA <- log (df$LIVING_GBA)
+
+
+
+
 
 
 #Filter out homes with no price, no full address, or sold earlier than 2015
@@ -27,11 +33,12 @@ df <- df %>% filter(!is.na(PRICE),  sale.year > 2015, !is.na(QUADRANT), QUADRANT
 #Drop variables in drop list
 
 drop.list <- c("BLDG_NUM", "SALE_NUM", "USECODE", "GIS_LAST_MOD_DTTM", "CMPLX_NUM",
-      "LIVING_GBA", "GBA", "CITY", "STATE", "NATIONALGRID", "X","Y",
+       "GBA", "CITY", "STATE", "NATIONALGRID", "X","Y",
       "ASSESSMENT_SUBNBHD", "CENSUS_TRACT", "CENSUS_BLOCK", "SQUARE" , "X.1")
 
 
 df <- df[,!colnames(df) %in% drop.list]
+
 
 #Convert to factor : 
 convert.factor <- c("ZIPCODE", "QUALIFIED", "STYLE", "STRUCTURE", "ZIPCODE", "sale.year")
@@ -50,12 +57,14 @@ df$sale.year <- as.factor(df$sale.year)
 
 #Manually code cut offs for outliers
 
-cont.variables <- c('BATHRM', 'HF_BATHRM', 'ROOMS', 'BEDRM', 'AYB', 'YR_RMDL','EYB', 'STORIES', 'KITCHENS', 'FIREPLACES', 'LANDAREA')
+cont.variables <- c('BATHRM', 'HF_BATHRM', 'ROOMS', 'BEDRM', 'AYB', 'YR_RMDL','EYB', 'STORIES', 'KITCHENS', 'FIREPLACES', 'LIVING_GBA')
 summary(df$PRICE)
 
 
 
-df <- df[df$LANDAREA < 10000,]; summary(df$PRICE)
+#df <- df[df$LANDAREA < 9,]; summary(df$PRICE)
+#df <- df[df$LANDAREA > 5,]; summary(df$PRICE)
+
 df <- df[df$FIREPLACES < 6,]; summary(df$PRICE)
 df <- df[df$BEDRM < 15, ]; summary(df$PRICE)
 df <- df[df$ROOMS < 20, ]; summary(df$PRICE)
@@ -80,10 +89,11 @@ for (i in pos.variables) {
   df <- df[df[,i] > 0 | is.na(df[,i]) , ]
 }
 
-df$LANDAREA <- log(df$LANDAREA)
 
 summary(df$log.PRICE)
 summary(df$PRICE)
+df$ZIPCODE <- as.factor(df$ZIPCODE)
 write.csv(df, "data/dc_residential_data_clean.csv")
+
 
 
