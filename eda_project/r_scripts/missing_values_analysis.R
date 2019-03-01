@@ -17,10 +17,11 @@ library(dplyr); library(ggplot2); library(gplots); library(tidyverse)
 #Read in the original source data
 df.orig <- df <- read.csv("data/dc_residential_data/DC_properties.csv")
 
-#Convert saledate to date, and add sale year column
+#Convert saledate to date, and add sale year column. Convert prices to logs
 
 df$SALEDATE <- as.Date(df$SALEDATE) 
 df$sale.year <- lubridate::year(df$SALEDATE)
+df$PRICE <- log(df$PRICE)
 
 #Create a dataframe that contains clean housing values that will not be dropped
 df.clean <- df %>% filter(!is.na(PRICE),  sale.year > 2015)
@@ -80,5 +81,5 @@ for (i in chi.test.results){
  chi.test.results[1]
  
  #Tukey's HSD???
- 
+
 
