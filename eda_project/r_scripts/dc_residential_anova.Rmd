@@ -1,0 +1,96 @@
+---
+title: "dc_residential_anova"
+author: "Mojahid Osman"
+date: "March 1, 2019"
+output: html_document
+---
+
+
+```{r pressure, echo=FALSE}
+
+library(dplyr)
+library(ggplot2)
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+#The Question we need to answer is: Is there any price different between houses prices in different Quadrants. 
+
+dc.data <- read.csv("~/Documents/Personal/Master/Intro_Data_Science/Project/Data/dc_residential_data_clean.csv", header=T)
+View(dc.data)
+
+#The Null Hypothese:
+#The mean price for all quadrant are the same : m1=m2=m3=m4
+#Alternative: At lease one mean price is different from the other 
+
+```{r}
+ggplot(dc.data, aes(QUADRANT,PRICE) )
+
+plot(dc.data$PRICE~dc.data$QUADRANT)
+
+table(dc.data$QUADRANT)
+
+table(price_outlier$QUADRANT)
+
+#Count of Houses by Quard
+table(dc.data$QUADRANT)
+
+plot(dc.data$PRICE~dc.data$QUADRANT)
+
+```
+
+#Get the mean price for each quadrant to get some idea about house prices
+aggregate(PRICE~QUADRANT,dc.data,mean)
+aggregate(PRICE~QUADRANT,dc.data,sd)
+#Lets do ANOVA test now  
+model <- aov(dc.data$PRICE~price.quadrant$QUADRANT)
+summary(model)
+#P value is very small so that  will reject the Null hyposises, that mean the prices is signifacntly diffrent 
+
+#price.quadrant$QUADRANT     3 3.784e+14 1.261e+14   623.8 <2e-16 ***
+#Residuals               21379 4.323e+15 2.022e+11                   
+#Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+# We need to know wich quardant prices is different ?
+# We nned to run a post-hoc analysis, will use Tukey post-hoc .
+TukeyHSD(model)
+#All the P values from the result of Tukey analysis are very small which  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
