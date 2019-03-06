@@ -26,7 +26,7 @@ cat.variables <- c('HEAT', 'AC', 'GRADE', 'SOURCE', 'sale.year')
 chi.test.results <-  lapply(seq(1:length(cat.variables)),function(i){
   x <- df[,cat.variables[i]]
   y <- df[,"QUADRANT"]
-  chisq.test(x,y)
+  tidy (chisq.test(x,y))
   
 })
 
@@ -49,20 +49,12 @@ for (i in 1:length(anova.test.results)){
 
 anova.results <- as.data.frame (cbind(variable,p.value))
 
-#This loop produces box plots for each continuous variable in question 
-p<- c()
-for(i in cont.variables){
- print (ggplot(df, aes(x= QUADRANT, y = df[,i] )) + geom_boxplot()+ ylab(i) )
-
-  
-}
-
-df$ZIPCODE <- as.factor(df$ZIPCODE)
-
-lm1 <- lm(log.PRICE ~ BATHRM + BEDRM + ROOMS + HF_BATHRM + LIVING_GBA + ZIPCODE + dist  , data = df ); summary(lm1)
 
 
-cor(df$BATHRM, df$HF_BATHRM)
+
+
+anova.results$test <- "ANOVA"
+anova.results$significance <- "YES"
 
 
 
