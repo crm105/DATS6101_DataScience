@@ -6,6 +6,15 @@ output: html_document
 ---
 
 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r basicfcn, include=F}
+# can add quietly=T option to the require() function
+loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.packages(x,dep=T,repos="http://cran.us.r-project.org"); if(!require(x,character.only=T)) stop("Package not found") } }
+```
+
 ```{r pressure, echo=FALSE}
 
 library(dplyr)
@@ -43,7 +52,8 @@ plot(dc.data$PRICE~dc.data$QUADRANT)
 aggregate(PRICE~QUADRANT,dc.data,mean)
 aggregate(PRICE~QUADRANT,dc.data,sd)
 #Lets do ANOVA test now  
-model <- aov(dc.data$PRICE~price.quadrant$QUADRANT)
+```{r}
+model <- aov(dc.data$PRICE~dc.data$QUADRANT)
 summary(model)
 #P value is very small so that  will reject the Null hyposises, that mean the prices is signifacntly diffrent 
 
@@ -51,19 +61,137 @@ summary(model)
 #Residuals               21379 4.323e+15 2.022e+11                   
 #Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
+````
 # We need to know wich quardant prices is different ?
-# We nned to run a post-hoc analysis, will use Tukey post-hoc .
+
+# So will run a post-hoc analysis, will use Tukey post-hoc .
+```{r}
 TukeyHSD(model)
-#All the P values from the result of Tukey analysis are very small which  
+#All the P values from the result of Tukey analysis are very small which  mean there no any siginficant realatetion between all mean
+```
+
+However once we get up to a significant number of variables and we want to know which most explain the variance in our dependent variable. 
+```{r}
+loadPkg("leaps")
+loadPkg("ISLR")
+#This is essentially best fit 
+reg.dc.data1 <- regsubsets(dc.data$PRICE~., data = dc.data, nvmax = 12, nbest = 1, method = "seqrep")  
+# leaps, regsubsets: Model selection by exhaustive search, forward or backward stepwise, or sequential replacement
+#The plot will show the Adjust R^2 when using the variables across the bottom
+plot(reg.dc.data1, scale = "adjr2", main = "Adjusted R^2")
+# In the "leaps" package, we can use scale=c("bic","Cp","adjr2","r2")
+plot(reg.dc.data, scale = "bic", main = "BIC")
+plot(reg.dc.data, scale = "Cp", main = "Cp")
+summary(reg.best)
+```
+
+#Creat a Line Chart to show timeserise of the PRICES over the time colored by Quardnet 
+```{r}
+price.all<- subset (select(dc.data, PRICE,QUADRANT,SALEDATE))
+View(price.all)
+
+# convert factor to numeric for convenience 
+price.all$SALEDATE <- as.numeric(price.all$SALEDATE ) 
+maxprice <- max(price.all$SALEDATE )
+
+
+# get the range for the x and y axis 
+xrange <- range(price.all$SALEDATE) 
+xrange
+yrange <- range(price.all$PRICE) 
+yrange
+
+
+# set up the plot 
+plot(xrange, yrange, type="n", xlab="Sale Date", ylab="Price" ) 
+colors <- rainbow(maxprice) 
+linetype <- c(1:maxprice) 
+plotchar <- seq(18,18+maxprice,1)
+
+
+# add lines 
+for (i in 1:maxprice) { 
+  price11 <- subset(price.all, SALEDATE==i) 
+  lines(price.all$PRICE,price.all$SALEDATE, type="b", lwd=1.5,
+    lty=linetype[i], col=colors[i], pch=plotchar[i]) 
+} 
 
 
 
 
 
 
+price.ne<- subset (select(dc.data, PRICE,QUADRANT,SALEDATE), dc.data$QUADRANT=="NE")
+View(price.ne)
+price.nw<- subset (select(dc.data, PRICE,QUADRANT,SALEDATE), dc.data$QUADRANT=="NW")
+View(price.nw)
+price.se<- subset (select(dc.data, PRICE,QUADRANT,SALEDATE), dc.data$QUADRANT=="SE")
+View(price.we)
+price.sw<- subset (select(dc.data, PRICE,QUADRANT,SALEDATE), dc.data$QUADRANT=="SW")
+View(price.sw)
+
+plot(price.ne$PRICE~price.ne$SALEDATE,type="l",col="red",xlab = "DATE" ,ylab = "PRICE")
+
+```
+
+#Count of houses by Quardnet.
+```{r}
+QUADRANT<-as.factor(dc.data$QUADRANT)
+count.house<-length(dc.data$PRICE)
+count.house
+
+count.house
+
+house.counts.q <- table(dc.data$QUADRANT)
+house.counts.q
+
+barplot(house.counts.q, main="House Distribution", xlab="QUADRANT", col=c("lightblue"))
+
+pie(house.counts.q,  main="Pie Chart of House Distribution")
+
+
+```
+
+#Some analysis based on landarea 
+#Create new variables for area category (Small, Medium , Big)
+```{r}
+#get idea baout the area mean
+summary(dc.data$LANDAREA)
+aggregate(LANDAREA~QUADRANT,dc.data,mean)
+
+dc.data$HouseSize[dc.data$LANDAREA<=6]<- 'Small'
+dc.data$HouseSize[dc.data$LANDAREA>6 & dc.data$LANDAREA<=8]<- 'Medium'
+dc.data$HouseSize[dc.data$LANDAREA>8]<- 'Big'
+
+house.counts.q.housesize <- table(dc.data$HouseSize,dc.data$QUADRANT)
+house.counts.q.housesize
+
+barplot(house.counts.q.housesize, main="House Distribution by LAND AREA",
+  xlab="QUADRANT", col=c("lightblue","lightyellow","red"), beside=TRUE,legend = rownames(house.counts.q.housesize))
+
+```
+#Some analysis based on Price 
+#Create new variables for Price Group  (Low, Medium , High)
+
+#get idea baout the area mean
+```{r}
+summary(dc.data$PRICE)
+aggregate(PRICE~QUADRANT,dc.data,mean)
+
+dc.data$Pricegroup[dc.data$PRICE<=400000]<- 'Low'
+dc.data$Pricegroup[dc.data$PRICE>400000 & dc.data$LANDAREA<=600000]<- 'Medium'
+dc.data$Pricegroup[dc.data$PRICE>600000]<- 'High'
+
+house.Pricegroup <- table(dc.data$Pricegroup,dc.data$QUADRANT)
+house.Pricegroup 
+
+
+barplot(house.Pricegroup, main="House Distribution by Price",
+  xlab="QUADRANT", col=c("lightblue","lightyellow","red"), beside=TRUE,legend = rownames(house.Pricegroup))
 
 
 
+```
 
 
 
